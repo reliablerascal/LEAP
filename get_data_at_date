@@ -1,0 +1,44 @@
+Function GetDataAtServiceLevelDate(personID As Long, ADate As Date, strField As String) As Variant
+'12/20/06 RR based on GetDataAtServiceLevelMonth
+'this is used to look up the FSW and the service level in the Home Visit Form and Termination Form
+
+'e.g., GetDataAtServiceLevelDate(-1430024269, #5/3/1997#, "service_level_code") might return 2
+
+On Error GoTo GetDataAtServiceLevelDate_Err
+
+'need to define this explicitly or else this would return "" instead of null...
+GetDataAtServiceLevelDate = Null
+
+Dim rst As Object
+Dim SQL As String
+
+SQL = "SELECT " & strField & " " & _
+        "FROM VBA_VIEW_tservice_level_history " & _
+        "WHERE person_id = " & personID & " " & _
+        "AND ((#" & ADate & "# BETWEEN start_date and end_date) " & _
+        "OR (#" & ADate & "# >= start_date AND end_date is NULL));"
+
+Set rst = CreateObject("ADODB.Recordset")
+
+With rst
+    Set .ActiveConnection = CurrentProject.Connection
+    .CursorType = adOpenKeyset
+    .LockType = adLockOptimistic
+    .Open SQL, Options:=adCmdTableDirect
+    If .RecordCount > 0 Then
+        .MoveFirst
+        GetDataAtServiceLevelDate = .Fields(strField)
+    'Else data is null
+    End If
+End With
+
+GetDataAtServiceLevelDate_Exit:
+    rst.Close
+    Set rst = Nothing
+    Exit Function
+
+GetDataAtServiceLevelDate_Err:
+    MsgBox Error$
+    GoTo GetDataAtServiceLevelDate_Exit
+
+End Function
