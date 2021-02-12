@@ -1,0 +1,16 @@
+Function GetReferredToHFADate(ReferralToHFADate, ScreenDate, AssessDate, IntakeDate) As Variant
+'4/13/18 RR to estimate date referred to HFA, which is a new field but required for BPS 1
+
+
+    Dim TempReferredToHFADate As Variant
+
+    If Not IsNull(ReferralToHFADate) Then
+        TempReferredToHFADate = ReferralToHFADate
+    Else
+        TempReferredToHFADate = GetEarlierDate(ScreenDate, AssessDate)
+        TempReferredToHFADate = GetEarlierDate(TempReferredToHFADate, IntakeDate)
+    End If
+    
+    GetReferredToHFADate = TempReferredToHFADate
+
+End Function
