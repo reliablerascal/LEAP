@@ -1,0 +1,83 @@
+Sub RecalculateTotalScore()
+'this code calculates subscale scores for the CHEERS Check-In tool, based on scores for individual questions and allowing for ht2 and ex3 to be skipped
+'subscale scores (score_r, score_c, etc.) are stored in unbound fields on the front-end CHEERS Check-In Form
+
+    Dim total_c As Variant
+    Dim total_ht As Variant
+    Dim total_ex As Variant
+    Dim total_em As Variant
+    Dim total_rr As Variant
+    Dim total_s As Variant
+    
+    Dim n_c As Integer
+    Dim n_ht As Integer
+    Dim n_ex As Integer
+    Dim n_em As Integer
+    Dim n_rr As Integer
+    Dim n_s As Integer
+    
+    If (IsNull(score_c1) Or IsNull(score_c2)) Then
+        score_c = Null
+    Else
+        total_c = score_c1 + score_c2
+        n_c = 2
+        Me.score_c = total_c / n_c
+    End If
+    
+    If (IsNull(score_ht1) Or (IsNull(score_ht2) And Not isSkip_ht2) Or IsNull(score_ht3)) Then
+        score_ht = Null
+    Else
+        If isSkip_ht2 Then
+            n_ht = 2
+            total_ht = score_ht1 + score_ht3
+        Else
+            n_ht = 3
+            total_ht = score_ht1 + score_ht2 + score_ht3
+        End If
+        Me.score_ht = total_ht / n_ht
+    End If
+    
+    If (IsNull(score_ex1) Or IsNull(score_ex2) Or (IsNull(score_ex3) And Not isSkip_ex3)) Then
+        score_ex = Null
+    Else
+        If isSkip_ex3 Then
+            n_ex = 2
+            total_ex = score_ex1 + score_ex2
+        Else
+            n_ex = 3
+            total_ex = score_ex1 + score_ex2 + score_ex3
+        End If
+        Me.score_ex = total_ex / n_ex
+    End If
+    
+    If (IsNull(score_em1) Or IsNull(score_em2) Or IsNull(score_em3)) Then
+        score_em = Null
+    Else
+        total_em = NullToZero(score_em1) + NullToZero(score_em2) + NullToZero(score_em3)
+        n_em = 3
+        Me.score_em = total_em / n_em
+    End If
+     
+    If (IsNull(score_rr1) Or IsNull(score_rr2)) Then
+        score_rr = Null
+    Else
+        total_rr = NullToZero(score_rr1) + NullToZero(score_rr2)
+        n_rr = 2
+        Me.score_rr = total_rr / n_rr
+    End If
+    
+    If (IsNull(score_s1) Or IsNull(score_s2) Or IsNull(score_s3)) Then
+        score_s = Null
+    Else
+        total_s = NullToZero(score_s1) + NullToZero(score_s2) + NullToZero(score_s3)
+        n_s = 3
+        Me.score_s = total_s / n_s
+    End If
+    
+    If IsNull(score_c) Or IsNull(score_ht) Or IsNull(score_ex) Or IsNull(score_em) Or IsNull(score_rr) Or IsNull(score_s) Then
+        score_total = Null
+    Else
+        score_total = score_c + score_ht + score_ex + score_em + score_rr + score_s
+    End If
+    
+End Sub
