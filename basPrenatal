@@ -1,0 +1,91 @@
+Function GetConceptionDate(birth_date As Variant, due_date As Variant, gestation_age As Variant) As Variant
+'6/19/14 RR
+
+    'If IsNull(birth_date) And Not IsNull(override_birth_date) Then birth_date = override_birth_date
+
+    If Not IsNull(birth_date) And Not IsNull(gestation_age) Then
+        GetConceptionDate = DateAdd("w", -gestation_age * 7, birth_date)
+    ElseIf Not IsNull(due_date) Then
+        '10/12/17 typical gestational age changed from 37 to 40 in PIMS 8.0.4
+        GetConceptionDate = DateAdd("w", -40 * 7, due_date)
+    Else
+        GetConceptionDate = Null
+    End If
+
+End Function
+
+Function GetGestAgeEnrollment(first_hv_date, birth_date As Variant, due_date As Variant, gestation_age As Variant) As Variant
+'6/19/14 RR
+
+    'If IsNull(birth_date) And Not IsNull(override_birth_date) Then birth_date = override_birth_date
+
+    Dim conception_date As Variant
+    conception_date = GetConceptionDate(birth_date, due_date, gestation_age)
+    'Debug.Print conception_date
+
+    If Not IsNull(first_hv_date) And Not IsNull(conception_date) Then
+        GetGestAgeEnrollment = DateDiff("w", conception_date, first_hv_date)
+    End If
+
+End Function
+
+Function GetGestAgeCurrent(latest_hv_date, birth_date As Variant, due_date As Variant, gestation_age As Variant) As Variant
+'6/19/14 RR
+
+    'If IsNull(birth_date) And Not IsNull(override_birth_date) Then birth_date = override_birth_date
+
+    Dim conception_date As Variant
+    conception_date = GetConceptionDate(birth_date, due_date, gestation_age)
+    
+    If Not IsNull(birth_date) Then
+        GetGestAgeCurrent = gestation_age
+    Else
+        If Not IsNull(latest_hv_date) And Not IsNull(conception_date) Then
+            GetGestAgeCurrent = DateDiff("w", conception_date, latest_hv_date)
+        End If
+    End If
+End Function
+
+Function GetGestAgeReportEnd(latest_hv_date As Variant, birth_date As Variant, due_date As Variant, gestation_age As Variant) As Variant
+'1/13/15 RR
+'gettin' this working for ND 1.1. Gest Age should be at report end date OR latest HV, whichever is earliest.
+
+    Dim latestServedBeforeReportEndDate As Date
+    If latest_hv_date < GetCohortEndDate() Then
+        latestServedBeforeReportEndDate = latest_hv_date
+    Else
+        latestServedBeforeReportEndDate = GetCohortEndDate()
+    End If
+
+     'find starting point for gestation
+    Dim conception_date As Variant
+    conception_date = GetConceptionDate(birth_date, due_date, gestation_age)
+    
+    If Not IsNull(birth_date) Then 'if there is a birth date...
+        If birth_date < GetCohortEndDate() Then
+            GetGestAgeReportEnd = gestation_age
+        ElseIf Not IsNull(latest_hv_date) And Not IsNull(conception_date) Then
+            GetGestAgeReportEnd = DateDiff("w", conception_date, latestServedBeforeReportEndDate)
+        'Else leave it null
+        End If
+    Else 'if there isn't a birth date...
+        If Not IsNull(latest_hv_date) And Not IsNull(conception_date) Then
+            GetGestAgeReportEnd = DateDiff("w", conception_date, latestServedBeforeReportEndDate)
+        'Else leave it null
+        End If
+    End If
+End Function
+
+Function GetPrenatalVisitsExpected(gestAgeEnrollt As Variant, gestAgeCurrent As Variant) As Variant
+'6/23/14 RR
+
+    GetPrenatalVisitsExpected = 0
+
+    If Not IsNull(gestAgeCurrent) And Not IsNull(gestAgeEnrollt) Then
+        'Int is a sneaky way to round down
+        GetPrenatalVisitsExpected = Int(DSum("nVisits_required", "tND_prenatal_visit_calculator", "[gestational_age_weeks] >= " & gestAgeEnrollt & " and [gestational_age_weeks] <= " & (gestAgeCurrent - 1)))
+    End If
+
+    If GetPrenatalVisitsExpected < 1 Then GetPrenatalVisitsExpected = 0
+
+End Function
