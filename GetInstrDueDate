@@ -1,0 +1,39 @@
+Function GetInstrDueDate(varBaselineCode As Variant, intAdminTimePoint As Integer, intPersonID As Long, Optional intKidID As Long) As Variant
+'6/8/12 RR
+'this and GetInstrMinDueDate and GetInstrMaxDueDate replace GetInstrumentAdminDate
+'1/18/13 RR recoded to get info for currently selected child, not necessarily target child
+'if varBaselineCode = 10 (parent), then intRascalID = PersonID
+'if varBaselineCode = 20 (child), then intRascalID = KidID
+
+'12/16/13 RR
+
+    Dim varBaselineDate As Date
+    
+    If Not IsNull(varBaselineCode) Then
+        If varBaselineCode = 10 Then 'baseline at enrollment date
+            Dim varEnrollDate As Variant
+            varEnrollDate = DLookup("service_start_date", "VBA_VIEW_tpeople_data", "[person_id] = " & intPersonID)
+            If Not IsNull(varEnrollDate) Then varBaselineDate = varEnrollDate
+        ElseIf varBaselineCode = 20 Then 'baseline at birth date
+            Dim varDueDate As Variant
+            Dim varBirthDate As Variant
+            If Not IsMissing(intKidID) And Not intKidID = 0 Then
+                varDueDate = DLookup("due_date", "VBA_VIEW_tbirth_data", "[kid_id] = " & intKidID)
+                varBirthDate = DLookup("birth_date", "VBA_VIEW_tbirth_data", "[kid_id] = " & intKidID)
+            Else 'i.e., in the case of a parent record based on target child's birth date
+                varDueDate = DLookup("target_due_date", "VBA_VIEW_tpeople_data", "[person_id] = " & intPersonID)
+                varBirthDate = DLookup("target_birth_date", "VBA_VIEW_tpeople_data", "[person_id] = " & intPersonID)
+            End If
+            If Not IsNull(varDueDate) Then
+                varBaselineDate = varDueDate
+            ElseIf Not IsNull(varBirthDate) Then
+                varBaselineDate = varBirthDate
+            End If
+        End If
+    End If
+    
+    'even if I change varBaselineDate to a variant field, the value always starts at 0. WTF?
+    If Not (varBaselineDate = 0) Then GetInstrDueDate = DateAdd("m", intAdminTimePoint, varBaselineDate)
+    'GetInstrDueDate = DateAdd("m", intAdminTimePoint, varBaselineDate)
+
+End Function
