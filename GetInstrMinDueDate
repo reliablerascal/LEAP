@@ -1,0 +1,46 @@
+Function GetInstrMinDueDate(isScheduled As Boolean, intBaselineCode As Variant, intAdminTimePoint As Integer, intPersonID As Long, Optional intKidID As Long) As Variant
+'6/8/12 RR
+'10/28/13 RR changed GetInstrDueDate(-99... to GetInstrDueDate(20...
+'12/15/13 RR updated to keep null where necessary
+
+    Dim varBaselineDate As Variant
+
+    If Not isScheduled Then
+        GetInstrMinDueDate = "unscheduled"
+    ElseIf intAdminTimePoint = -3 Then 'first trimester
+        If Not (GetInstrDueDate(20, 0, intPersonID) = 0) Then GetInstrMinDueDate = DateAdd("ww", -36, GetInstrDueDate(20, 0, intPersonID))
+    ElseIf intAdminTimePoint = -6 Then 'second trimester
+        If Not (GetInstrDueDate(20, 0, intPersonID) = 0) Then GetInstrMinDueDate = DateAdd("ww", -24, GetInstrDueDate(20, 0, intPersonID))
+    ElseIf intAdminTimePoint = -9 Then 'third trimester
+        If Not (GetInstrDueDate(20, 0, intPersonID) = 0) Then GetInstrMinDueDate = DateAdd("ww", -12, GetInstrDueDate(20, 0, intPersonID))
+    ElseIf intAdminTimePoint = 254 Then '36 weeks' pregnant
+        Dim varBirthDate As Variant
+        Dim varDueDate As Variant
+        varBirthDate = DLookup("target_birth_date", "VBA_VIEW_tpeople_data", "[person_id] = " & intPersonID)
+        varDueDate = DLookup("target_due_date", "VBA_VIEW_tpeople_data", "[person_id] = " & intPersonID)
+        If Not IsNull(varBirthDate) Then
+            GetInstrMinDueDate = DateAdd("ww", -1, varBirthDate)
+        ElseIf Not IsNull(varDueDate) Then
+            GetInstrMinDueDate = DateAdd("ww", -1, varDueDate)
+        Else
+            GetInstrMinDueDate = "at 36 weeks preg"
+        End If
+    ElseIf intAdminTimePoint = 255 Then 'termination
+        Dim varTerminationDate As Variant
+        varTerminationDate = DLookup("calc_termination_date", "VBA_VIEW_tpeople_data", "[person_id] = " & intPersonID)
+        If IsNull(varTerminationDate) Then
+            GetInstrMinDueDate = "at termination"
+        Else
+            GetInstrMinDueDate = DateAdd("m", -1, varTerminationDate)
+        End If
+    Else 'postnatal
+        If Not IsNull(intBaselineCode) And intAdminTimePoint = 0 Then
+            GetInstrMinDueDate = GetInstrDueDate(intBaselineCode, intAdminTimePoint, intPersonID, intKidID)
+        ElseIf Not IsNull(intBaselineCode) Then
+            If Not (GetInstrDueDate(intBaselineCode, intAdminTimePoint, intPersonID, intKidID) = 0) Then GetInstrMinDueDate = DateAdd("m", -1, GetInstrDueDate(intBaselineCode, intAdminTimePoint, intPersonID, intKidID))
+        Else
+            GetInstrMinDueDate = "No baseline"
+        End If
+    End If
+
+End Function
