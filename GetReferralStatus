@@ -1,0 +1,39 @@
+Function GetReferralStatus(intReferralID As Variant) As Variant
+    
+    Dim isReferralReceived As Variant
+    Dim dateReceived As Variant
+    Dim intReasonCode As Variant
+    Dim strReasonNotReceived As Variant
+    Dim strActionTaken As Variant
+    Dim strServiceCode As Variant
+    Dim strServiceType As Variant
+    
+    If Not IsNull(intReferralID) Then
+        isReferralReceived = DLookup("received_ynu", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+        strServiceCode = DLookup("referral_service_code", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+        If Not IsNull(strServiceCode) Then strServiceType = DLookup("referral_service_type", "treferral_lkup_services", "[referral_service_code] = " & strServiceCode)
+        If isReferralReceived = 0 Then 'Yes
+            dateReceived = DLookup("received_date", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+            strActionTaken = DLookup("received_action_taken", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+            GetReferralStatus = "Referral received"
+            If Not IsNull(strServiceCode) Then GetReferralStatus = GetReferralStatus & " for " & strServiceType
+            If Not IsNull(dateReceived) Then GetReferralStatus = GetReferralStatus & " on " & dateReceived
+            If Not IsNull(strActionTaken) Then GetReferralStatus = GetReferralStatus & "; Action Taken: " & strActionTaken
+        ElseIf isReferralReceived = 1 Then 'No
+            intReasonCode = DLookup("reason_not_received_code", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+            If intReasonCode = 254 Then
+                strReasonNotReceived = DLookup("reason_not_received_other_text", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+            ElseIf Not IsNull(intReasonCode) Then
+                strReasonNotReceived = DLookup("reason_not_received_desc", "treferral_lkup_reason_not_received", "[reason_not_received_code] = " & intReasonCode)
+            End If
+            strActionTaken = DLookup("not_received_action_taken", "VBA_VIEW_treferral_data", "[referral_id] = " & intReferralID)
+            GetReferralStatus = "Referral not received"
+            If Not IsNull(strServiceCode) Then GetReferralStatus = GetReferralStatus & " for " & strServiceType
+            If Not IsNull(intReasonCode) Then GetReferralStatus = GetReferralStatus & " because " & strReasonNotReceived
+            If Not IsNull(strActionTaken) Then GetReferralStatus = GetReferralStatus & "; Action Taken: " & strActionTaken
+        Else
+            GetReferralStatus = "unknown"
+        End If
+    End If
+
+End Function
