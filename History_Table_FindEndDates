@@ -1,0 +1,96 @@
+Function History_Table_FindEndDates(strHistoryTable As String) As Boolean
+'determine end dates in each row of a PIMS history table, using the following start date or termination date
+
+'INPUT: strTableName- name of table for end date calculation
+
+'OUTPUT: True if successful
+
+'2/9/07 RR
+'7/21/09 RR updated to reflect new architecture
+
+On Error GoTo History_Table_FindEndDates_Err
+
+Dim rst As Object
+Dim NextStartDate As Date
+Dim NextRascal As Long
+Dim sSQL As String
+Dim strIdentityField As String
+    
+Select Case strHistoryTable
+Case "tchild_history"
+    sSQL = "SELECT tchild_history.kid_id AS rascal_id, tchild_history.start_date, tchild_history.end_date, tpeople_data.calc_termination_date " & _
+        "FROM tpeople_data " & _
+        "INNER JOIN (tbirth_data INNER JOIN tchild_history ON tbirth_data.kid_id = tchild_history.kid_id) " & _
+        "ON tpeople_data.person_id = tbirth_data.person_id " & _
+        "ORDER BY tchild_history.kid_id, tchild_history.start_date;"
+    'strIdentityField = "kid_id"
+Case "tparticipant_history"
+    sSQL = "SELECT tparticipant_history.person_id AS rascal_id, tparticipant_history.start_date, tparticipant_history.end_date, tpeople_data.calc_termination_date " & _
+        "FROM tpeople_data " & _
+        "INNER JOIN tparticipant_history ON tpeople_data.person_id = tparticipant_history.person_id " & _
+        "ORDER BY tparticipant_history.person_id, tparticipant_history.start_date;"
+    'strIdentityField = "person_id"
+Case "tpartner_history"
+    sSQL = "SELECT tpartner_history.partner_id AS rascal_id, tpartner_history.start_date, tpartner_history.end_date, tpeople_data.calc_termination_date " & _
+        "FROM tpartner_history " & _
+        "INNER JOIN (tpeople_data INNER JOIN tpartner_data ON tpeople_data.person_id = tpartner_data.person_id) " & _
+        "ON tpartner_history.partner_id = tpartner_data.partner_id " & _
+        "ORDER BY tpartner_history.partner_id, tpartner_history.start_date;"
+    'strIdentityField = "partner_id"
+Case "tservice_level_history"
+    sSQL = "SELECT tservice_level_history.person_id AS rascal_id, tservice_level_history.start_date, tservice_level_history.end_date, tpeople_data.calc_termination_date " & _
+        "FROM tpeople_data INNER JOIN tservice_level_history ON tpeople_data.person_id = tservice_level_history.person_id " & _
+        "ORDER BY tservice_level_history.person_id, tservice_level_history.start_date;"
+    'strIdentityField = "person_id"
+Case "TEMP_rpt14C_IntensiveFirstSixMonths"
+    sSQL = "SELECT TEMP_rpt14C_IntensiveFirstSixMonths.person_id AS rascal_id, TEMP_rpt14C_IntensiveFirstSixMonths.start_date, TEMP_rpt14C_IntensiveFirstSixMonths.end_date, tpeople_data.calc_termination_date " & _
+        "FROM tpeople_data INNER JOIN TEMP_rpt14C_IntensiveFirstSixMonths ON tpeople_data.person_id = TEMP_rpt14C_IntensiveFirstSixMonths.person_id " & _
+        "ORDER BY TEMP_rpt14C_IntensiveFirstSixMonths.person_id, TEMP_rpt14C_IntensiveFirstSixMonths.start_date;"
+End Select
+
+Set rst = CreateObject("ADODB.Recordset")
+With rst
+    Set .ActiveConnection = CurrentProject.Connection
+    .CursorType = adOpenKeyset
+    .LockType = adLockOptimistic
+    .Open sSQL, Options:=adCmdTableDirect
+    If .RecordCount > 0 Then
+        .MoveLast
+        NextRascal = 0
+        Do Until .BOF
+            If .Fields("rascal_id") = NextRascal Then 'current person
+                .Fields("end_date") = DateAdd("d", -1, NextStartDate)
+            Else 'new person
+                If IsNull(.Fields("calc_termination_date")) Then
+                    .Fields("end_date") = Null
+                Else
+                    If .Fields("calc_termination_date") > .Fields("start_date") Then
+                        .Fields("end_date") = .Fields("calc_termination_date")
+                    Else:
+                        .Fields("end_date") = .Fields("start_date")
+                    End If
+                End If
+            End If
+            
+            .Update 'need this each time in loop or could do this just once for entire recordset?
+            
+            NextStartDate = .Fields("start_date")
+            NextRascal = .Fields("rascal_id")
+            
+            .MovePrevious
+        Loop
+    End If
+End With
+
+History_Table_FindEndDates = True
+
+History_Table_FindEndDates_Exit:
+    rst.Close
+    Set rst = Nothing
+    Exit Function
+
+History_Table_FindEndDates_Err:
+    MsgBox Error$ & " in History_Table_FindEndDates. "
+    GoTo History_Table_FindEndDates_Exit
+
+End Function
