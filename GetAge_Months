@@ -1,0 +1,6 @@
+Function GetAge_Months (varStartDate as Date, varEndDate as Date) as Integer		
+	GetAge_Months = DateDiff("m", varStartDate, varEndDate)	
+	If (Day(varEndDate) < Day(varStartDate)) Then	
+		GetAge_Months = GetAge_Months - 1
+	End If	
+End Function		
