@@ -1,0 +1,27 @@
+Public Function GetFSCItemScore(AFld As Variant) As Long
+'2/5/10 RR revised to skip any negative scores (this is only used for FSCs...)
+
+On Error GoTo GetFSCItemScore_error
+    
+    If IsNull(AFld) Then
+        
+        GetFSCItemScore = 0
+    
+    ElseIf AFld < 0 Then
+        
+        GetFSCItemScore = 0
+    
+    Else
+        
+        GetFSCItemScore = AFld
+    
+    End If
+
+GetFSCItemScore_exit:
+    Exit Function
+
+GetFSCItemScore_error:
+    MsgBox "Error: " & Error$
+    Resume GetFSCItemScore_exit
+
+End Function
