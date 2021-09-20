@@ -1,0 +1,26 @@
+Private Function SetScore(AScoreName As String) As Integer
+
+On Error GoTo mic_error
+
+    Const NUM_SCORE_FIELDS = 10
+    
+    Dim theScore As Integer
+    Dim I As Integer
+
+    theScore = 0
+
+    For I = 1 To NUM_SCORE_FIELDS
+        theScore = theScore + GetFSCItemScore(Me(AScoreName & "_fsc_" & I & "_score"))
+    Next I
+
+    SetScore = theScore
+    Me(AScoreName & "_fsc_total_score") = theScore
+
+mic_exit:
+    Exit Function
+
+mic_error:
+    MsgBox "Error: " & Error$
+    Resume mic_exit
+
+End Function
